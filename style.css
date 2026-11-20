@@ -289,3 +289,12 @@ ul.plain { padding-left: 20px; margin: 0 0 16px; }
 .lock-ic { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
 .lock-ic .i { width: 26px; height: 26px; }
 .locked .row { justify-content: center; }
+
+/* ৫ বক্স রিভিশন */
+.boxl { display: block; margin-top: 4px; color: var(--accent); font-size: .85rem; }
+.boxl.ok { color: var(--ok); }
+.review { border-color: var(--accent); }
+.howbox summary { cursor: pointer; font-weight: 600; }
+.howbox[open] summary { margin-bottom: 8px; }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+.btn.danger:hover { background: var(--bad-soft); }
