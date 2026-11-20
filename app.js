@@ -620,6 +620,50 @@ function reviewItem(q, chosen) {
     <div class="exp">${expHTML(q)}</div>
   </details>`;
 }
+/* খাতার প্রশ্ন: আগে উত্তর লুকানো MCQ; উত্তর দিলে ফল, ভুল হলে সাথে সাথে ব্যাখ্যা */
+const nbChosen = {};
+function nbQuizInner(q) {
+  const chosen = q.id in nbChosen ? nbChosen[q.id] : null, answered = chosen !== null;
+  const fav = Store.isFav(q.id);
+  const opts = q.o.map((o, k) => {
+    let cls = '';
+    if (answered) { if (k === q.a) cls = 'ok'; else if (k === chosen) cls = 'bad'; }
+    return `<button class="opt ${cls}" data-nbk="${k}" ${answered ? 'disabled' : ''}><span class="l">${LETTERS[k]}</span><span class="t">${fmt(o)}</span></button>`;
+  }).join('');
+  let after = '';
+  if (answered) {
+    const right = q.a != null && chosen === q.a;
+    const verdict = q.a == null ? `<div class="verdict warn">${I('alert')}প্রশ্নটি বাতিল: কোনো অপশনই সঠিক নয়।</div>`
+      : right ? `<div class="verdict ok">${I('check')}সঠিক উত্তর!</div>`
+        : `<div class="verdict bad">${I('x')}ভুল হয়েছে। সঠিক উত্তর: (${LETTERS[q.a]}) ${fmt(q.o[q.a])}</div>`;
+    const exp = `<div class="exp"><h3>ব্যাখ্যা</h3>${expHTML(q)}</div>`;
+    after = verdict + (right ? `<details class="nbexp"><summary>ব্যাখ্যা দেখুন</summary>${exp}</details>` : exp)
+      + `<button class="btn block" data-nbagain style="margin-top:4px">আবার চেষ্টা করুন</button>`;
+  }
+  return `<div class="spread"><div class="meta">${metaLine(q)} প্রশ্ন ${bn(q.n)} · ${esc(SUBJ[q.s])}${boxLine(q.id)}</div>
+      <span class="qtools">${reportBtn(q)}<button class="star ${fav ? 'on' : ''}" data-fav="${q.id}" aria-label="ফেভারিট">${I('star')}</button></span></div>
+    <div class="qtext">${fmt(q.q || 'চিত্রভিত্তিক প্রশ্ন')}</div>${qImgHTML(q)}
+    <div class="opts">${opts}</div>${after}`;
+}
+const nbQuizItem = (q) => `<article class="nbq" data-nbq="${q.id}">${nbQuizInner(q)}</article>`;
+function bindNbQuiz() {
+  $view().querySelectorAll('[data-nbq]').forEach((el) => {
+    const q = BY_ID[el.dataset.nbq];
+    const paint = () => { el.innerHTML = nbQuizInner(q); wire(); };
+    const wire = () => {
+      el.querySelectorAll('[data-nbk]').forEach((b) => (b.onclick = () => {
+        const k = +b.dataset.nbk; nbChosen[q.id] = k;
+        Store.record(q.id, q.a == null ? null : k === q.a); Store.save();
+        paint();
+      }));
+      const again = el.querySelector('[data-nbagain]');
+      if (again) again.onclick = () => { delete nbChosen[q.id]; paint(); };
+      const st = el.querySelector('[data-fav]');
+      if (st) st.onclick = (e) => { e.preventDefault(); st.classList.toggle('on', Store.toggleFav(q.id)); };
+    };
+    wire();
+  });
+}
 function bindFavButtons() {
   $view().querySelectorAll('[data-fav]').forEach((b) => (b.onclick = (e) => {
     e.preventDefault();
@@ -652,16 +696,15 @@ function viewNotebook() {
   <a class="btn block" href="#/guide" style="margin-bottom:16px">${I('archive')}বিগত প্রশ্ন সংকলন (PDF)</a>
   ${nbTab === 'hist' ? `<section class="card">${hist.length ? `<table><thead><tr><th>পরীক্ষা</th><th class="num">ফল</th></tr></thead><tbody>${hist.map((h) => `<tr><td>${esc(h.label)}<div class="small muted">${new Date(h.date).toLocaleDateString('bn-BD')} · ${h.mode === 'mock' ? 'মক টেস্ট' : 'প্র্যাকটিস'}</div></td><td class="num">${bn(h.c)}/${bn(h.n)}${h.mode === 'mock' ? `<div class="small muted">নম্বর ${bn(h.score)}</div>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">এখনো কোনো পরীক্ষা দেননি।</p>'}</section>`
     : `<section class="card">
-      ${list.length ? `<button class="btn block" data-act="practice" style="margin-bottom:12px">সবগুলো এখনই প্র্যাকটিস করুন</button>${list.map((q) => reviewItem(q, undefined)).join('')}`
+      ${list.length ? `<button class="btn block" data-act="practice" style="margin-bottom:8px">সবগুলো এখনই প্র্যাকটিস করুন</button><p class="small muted" style="margin:0 0 4px">এখানেই উত্তর দিন। ভুল হলে নিচে ব্যাখ্যা আসবে।</p>${list.map((q) => nbQuizItem(q)).join('')}`
         : `<p class="empty">${nbTab === 'wrong' ? 'বক্সে কোনো ভুল প্রশ্ন নেই।' : 'প্রশ্নের পাশের তারা চিহ্ন চাপলে এখানে জমা থাকবে — যেগুলো আন্দাজে মিলেছে বা আবার পড়তে চান।'}</p>`}
     </section>`}
   ${resetHTML()}`;
   const v = $view();
-  bindReview(); bindReset();
+  bindReview(); bindReset(); bindNbQuiz();
   v.querySelectorAll('[data-tab]').forEach((b) => (b.onclick = () => { nbTab = b.dataset.tab; viewNotebook(); }));
   const p = v.querySelector('[data-act="practice"]');
   if (p) p.onclick = () => startPractice(shuffle(list).slice(0, 50), nbTab === 'wrong' ? 'আমার ভুল প্রশ্ন' : 'ফেভারিট প্রশ্ন');
-  bindFavButtons();
 }
 
 /* ---------- নতুন রাউন্ড / সব মুছুন ---------- */
