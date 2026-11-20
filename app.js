@@ -62,7 +62,7 @@ const KEY = 'ntrca-college.v1';
 const Store = {
   data: freshData(),
   load() {
-    try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) this.data = Object.assign(freshData(), d); } catch (e) { /* প্রাইভেট মোড */ }
+    try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) { this.data = Object.assign(freshData(), d); if (!d.box) this.data.box = null; } } catch (e) { /* প্রাইভেট মোড */ }
     this.migrate();
   },
   /* পুরনো ডেটা: শেষবার ভুল প্রশ্নগুলো আজই বক্স ১-এ */
