@@ -1,4 +1,4 @@
-/* নিবন্ধন — NTRCA কলেজ পর্যায় প্রশ্ন প্র্যাকটিস (রিপিট অ্যাপের কাঠামো; প্রোগ্রেস এই ডিভাইসে জমা থাকে) */
+/* নিবন্ধন — NTRCA কলেজ পর্যায় প্রশ্ন প্র্যাকটিস (রিপিট অ্যাপের কাঠামো; লগইন auth.js, রিপিটের Firebase-এ ntrca_* ঘরে) */
 'use strict';
 
 const SUBJ_ORDER = ['BN', 'EN', 'MA', 'GK'];
@@ -730,7 +730,7 @@ function bindReset() {
   if (w) w.onclick = () => {
     if (!confirm('সব উত্তর, ভুল, বক্সের প্রশ্ন, ফেভারিট আর ইতিহাস মুছে যাবে। এটা আর ফেরানো যাবে না। মুছবেন?')) return;
     if (!confirm('শেষবার নিশ্চিত করুন: সত্যিই সব মুছে ফেলবেন?')) return;
-    Store.data = freshData(); Store.save(); go('');
+    Store.data = freshData(); Store.data.wipedAt = Date.now(); Store.save(); go('');
   };
 }
 
@@ -860,12 +860,12 @@ function viewAbout() {
     <h1>${BRAND} সম্পর্কে</h1>
     <p>${BRAND} শিক্ষক নিবন্ধন (NTRCA) প্রিলিমিনারির প্র্যাকটিস প্ল্যাটফর্ম। এখানে ৬ষ্ঠ থেকে ১৮তম নিবন্ধনের কলেজ পর্যায়ের ${bn(BANK.questions.length)}টি প্রশ্ন উত্তর ও ব্যাখ্যাসহ আছে, প্রতিটি প্রশ্ন বিষয় ও টপিক অনুযায়ী সাজানো।</p>
     <p>প্রিলিতে বাংলা, English, গণিত আর সাধারণ জ্ঞান থেকে ২৫টি করে মোট ১০০টি প্রশ্ন আসে, আর এই টপিকগুলো থেকেই প্রশ্ন ঘুরে ফিরে আসে। তাই বিগত প্রশ্ন দিয়ে শুরু করাই সবচেয়ে কাজের।</p>
-    <p class="note">আপনার প্রোগ্রেস এই ডিভাইসের ব্রাউজারে জমা থাকে। ব্রাউজারের ডাটা মুছলে প্রোগ্রেসও মুছে যাবে।</p>
+    <p class="note">লগইন না করলে প্রোগ্রেস শুধু এই ডিভাইসের ব্রাউজারে থাকে। Google দিয়ে লগইন করলে অ্যাকাউন্টে সেভ হয়, তখন মোবাইল আর কম্পিউটারে একই প্রোগ্রেস পাবেন।</p>
     <p class="small muted">কোনো উত্তর বা ব্যাখ্যায় ভুল পেলে প্রশ্নের পাশের “ভুল জানান” চাপুন, অথবা নিচের WhatsApp-এ জানান।</p>
     <button class="btn" data-act="reset">আমার সব প্রোগ্রেস মুছে ফেলুন</button>
   </section>${makerHTML()}`;
   $view().querySelector('[data-act="reset"]').onclick = () => {
-    if (confirm('সব উত্তর, ভুল, ফেভারিট আর ইতিহাস মুছে যাবে। নিশ্চিত?')) { Store.data = freshData(); Store.save(); go(''); }
+    if (confirm('সব উত্তর, ভুল, ফেভারিট আর ইতিহাস মুছে যাবে। নিশ্চিত?')) { Store.data = freshData(); Store.data.wipedAt = Date.now(); Store.save(); go(''); }
   };
 }
 
@@ -910,7 +910,7 @@ document.addEventListener('click', async (e) => {
 
 /* ---------- লগইন, অ্যাকাউন্ট, অ্যাডমিন (auth.js → window.RA) ---------- */
 let pendingGuide = false;
-const BCS_OPTS = ['৫১তম BCS', '৫২তম বা পরের BCS', 'ব্যাংক বা অন্য সরকারি চাকরি', 'এখনো ঠিক করিনি'];
+const BCS_OPTS = ['১৯তম নিবন্ধন (কলেজ)', '১৯তম নিবন্ধন (স্কুল)', 'পরের কোনো নিবন্ধন', 'এখনো ঠিক করিনি'];
 function renderAcct() {
   const el = document.getElementById('acct'); if (!el) return;
   const RA = window.RA;
@@ -974,11 +974,11 @@ function viewAccount() {
       <p>Google দিয়ে লগইন করলে:</p>
       <ul class="plain">
         <li>আপনার অগ্রগতি, ভুল প্রশ্ন আর ফেভারিট অ্যাকাউন্টে সেভ থাকবে।</li>
-        <li>পূর্ণ স্টাডি গাইড PDF নামাতে পারবেন।</li>
+        <li>পরে পেইড স্টাডি নোট চালু হলে এই অ্যাকাউন্টেই খুলবে।</li>
       </ul>
       <button class="btn primary block" data-login>${I('user')}Google দিয়ে লগইন</button>
       ${RA.inAppBrowser ? `<p class="note small" style="margin-top:12px">${esc(loginErrorText({ code: 'in-app' }))}</p>` : ''}
-      <p class="small muted" style="margin-top:12px">লগইন না করেও প্র্যাকটিস, মক টেস্ট আর নোট পড়া যাবে। আমরা শুধু আপনার নাম আর ইমেইল পাই, পাসওয়ার্ড কখনো নয়। <a href="#/privacy">প্রাইভেসি নীতি</a></p>
+      <p class="small muted" style="margin-top:12px">লগইন না করেও প্র্যাকটিস আর মক টেস্ট দেওয়া যাবে। আমরা শুধু আপনার নাম আর ইমেইল পাই, পাসওয়ার্ড কখনো নয়। <a href="#/privacy">প্রাইভেসি নীতি</a></p>
     </section>`;
     return;
   }
@@ -1070,7 +1070,7 @@ async function viewAdmin() {
       .concat(users.map((u) => [u.name, u.email, u.whatsapp ? `'${u.whatsapp}` : '', u.bcs, u.consent ? 'হ্যাঁ' : 'না', iso(u.created), iso(u.lastLogin)]));
     const blob = new Blob(['\ufeff' + rows.map((r) => r.map(q).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `repeat-users-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `ntrca-users-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
 }

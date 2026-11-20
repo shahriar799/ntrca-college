@@ -2,7 +2,7 @@
    অ্যাপের কোড ও প্রশ্ন (html/js/css/json): আগে নেটওয়ার্ক, না পেলে ক্যাশ — তাই আপডেট সাথে সাথে পৌঁছায়।
    ছবি ও আইকন: আগে ক্যাশ — দ্রুত, আর এগুলো বদলায় না। */
 const VERSION = 'ntrca-college-v5';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'data/bank.json', 'icons/icon-192.png', 'icons/icon-512.png', 'fonts/kalpurush.woff'];
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'auth.js', 'manifest.json', 'data/bank.json', 'icons/icon-192.png', 'icons/icon-512.png', 'fonts/kalpurush.woff'];
 
 self.addEventListener('install', (e) => {
   // cache:'reload' — ব্রাউজারের পুরনো কপি না নিয়ে সার্ভার থেকে নতুনটা আনে
